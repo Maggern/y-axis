@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tick builder  </title>
+
+  <!--  Bootstrap 5  -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+  <h1 class="mb-4">Dynamic Y-Axis Tick Generator (9, 8, 7, 6, 5, 4, 3 ticks) for graphs</h1>
+
+  <!-- ▸ input -------------------------------------------------------------->
+  <div class="mb-3">
+    <label for="maxInput" class="form-label fw-semibold">
+      Largest data value
+    </label>
+    <div class="input-group">
+      <input id="maxInput" type="text" class="form-control"
+             placeholder="e.g. 3 450 000" />
+      <button id="btnMake" class="btn btn-primary">Generate</button>
+    </div>
+  </div>
+
+  <!-- ▸ result ------------------------------------------------------------->
+  <div id="resultCard" class="card d-none shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">Ticks</h5>
+      <p id="ticksList" class="card-text mb-0"></p>
+    </div>
+  </div>
+</div>
+
+<!--  ▸ JavaScript ---------------------------------------------------------->
+<script>
+/* ───────── 1. choose the “round-to” step ──────────────────────────────── */
+function chooseStep(n) {
+  
+  if (n > 5_000_000_000) return 1_000_000_000;
+  if (n > 2_000_000_000) return 500_000_000;
+  if (n > 1_000_000_000) return 200_000_000;
+  if (n > 500_000_000) return 100_000_000;
+  if (n > 200_000_000) return 50_000_000;
+  if (n > 100_000_000) return 20_000_000;
+  if (n > 50_000_000) return 10_000_000;
+  if (n > 20_000_000) return 5_000_000;
+  if (n > 10_000_000) return 2_000_000;
+  if (n > 5_000_000) return 1_000_000;
+  if (n > 1_000_000) return 500_000;
+  if (n > 500_000) return 100_000;
+  if (n > 200_000) return 50_000;
+  if (n > 100_000) return 20_000;
+  if (n > 50_000) return 10_000;
+  if (n > 20_000) return 5_000;
+  if (n > 10_000) return 2_000;
+  if (n > 5_000) return 1_000;
+  if (n > 2_000) return 500;
+  if (n > 1_000) return 200;
+  if (n > 500) return 100;
+  if (n > 200) return 50;
+  if (n > 100) return 20;
+  if (n > 50) return 10;
+  if (n > 20) return 5;
+  if (n > 10) return 2;
+  if (n > 5) return 1;
+  if (n > 2) return 0.5;
+  if (n > 1) return 0.2;
+  if (n > 0.5) return 0.1;
+  if (n > 0.2) return 0.05;
+  if (n > 0.1) return 0.02;
+  if (n > 0.05) return 0.01;
+  if (n > 0.02) return 0.005;
+  if (n > 0.01) return 0.002;
+  if (n > 0.005) return 0.001;
+  if (n > 0.002) return 0.0005;
+  if (n > 0.001) return 0.0002;
+  if (n > 0.0005) return 0.0001;
+  if (n > 0.0002) return 0.00005;
+  if (n > 0.0001) return 0.00002;
+  if (n > 0.00005) return 0.00001;
+  if (n > 0) return 0.00001;
+
+  // …then the negatives, same thresholds but “<” and negated returns…
+  if (n < -5_000_000_000) return -1_000_000_000;
+  if (n < -2_000_000_000) return -500_000_000;
+  if (n < -1_000_000_000) return -200_000_000;
+  if (n < -500_000_000) return -100_000_000;
+  if (n < -200_000_000) return -50_000_000;
+  if (n < -100_000_000) return -20_000_000;
+  if (n < -50_000_000) return -10_000_000;
+  if (n < -20_000_000) return -5_000_000;
+  if (n < -10_000_000) return -2_000_000;
+  if (n < -5_000_000) return -1_000_000;
+  if (n < -1_000_000) return -500_000;
+  if (n < -500_000) return -100_000;
+  if (n < -200_000) return -50_000;
+  if (n < -100_000) return -20_000;
+  if (n < -50_000) return -10_000;
+  if (n < -20_000) return -5_000;
+  if (n < -10_000) return -2_000;
+  if (n < -5_000) return -1_000;
+  if (n < -2_000) return -500;
+  if (n < -1_000) return -200;
+  if (n < -500) return -100;
+  if (n < -200) return -50;
+  if (n < -100) return -20;
+  if (n < -50) return -10;
+  if (n < -20) return -5;
+  if (n < -10) return -2;
+  if (n < -5) return -1;
+  if (n < -2) return -0.5;
+  if (n < -1) return -0.2;
+  if (n < -0.5) return -0.1;
+  if (n < -0.2) return -0.05;
+  if (n < -0.1) return -0.02;
+  if (n < -0.05) return -0.01;
+  if (n < -0.02) return -0.005;
+  if (n < -0.01) return -0.002;
+  if (n < -0.005) return -0.001;
+  if (n < -0.002) return -0.0005;
+  if (n < -0.001) return -0.0002;
+  if (n < -0.0005) return -0.0001;
+  if (n < -0.0002) return -0.00005;
+  if (n < -0.0001) return -0.00002;
+  if (n < -0.00005) return -0.00001;
+  if (n < 0) return -0.00001;
+
+  // finally, exact zero
+  return 0;
+ 
+}
+
+  function chooseStep_dynamic(n) { //not currently used
+    if (n === 0) return 0;
+
+    const sign = Math.sign(n);
+    const abs = Math.abs(n);
+
+    // Build all “1,2,5 × 10^exp” steps from 10^9 down to 10^(−5)
+    const steps = [];
+    for (let exp = 9; exp >= -5; exp--) {
+      const f = Math.pow(10, exp);
+      [1, 2, 5].forEach(m => steps.push(m * f));
+    }
+    // Sort descending
+    steps.sort((a, b) => b - a);
+
+    // Find first bucket where abs(n) > 5×step
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      if (abs > step * 5) {
+        return sign * step;
+      }
+    }
+
+    // If it’s very small (≤ 5 × 0.00001), clamp to the smallest bucket
+    return sign * 0.00001;
+  }
+
+
+/* ───────── 2. build ticks: prefer 7 → 5 → 3 ──────────────────────────── */
+function buildTicks(max) {
+  const step    = chooseStep(max);
+
+  const ceiling = Math.ceil(max / step) * step;      // round up to step
+
+  for (const want of [9, 8, 7, 6, 5, 4, 3]) {
+    for (let k = 1; k <= ceiling / step; k++) {
+      const gap   = k * step;
+      const count = Math.floor((ceiling - 1) / gap) + 2; // formula incl. 0 & ceiling
+      if (count === want) {
+        const ticks = [];
+        for (let v = 0; v < ceiling; v += gap) ticks.push(v);
+        if (ticks[ticks.length - 1] !== ceiling) ticks.push(ceiling);
+        return ticks;
+      }
+    }
+  }
+
+  return [0, ceiling];                               // fallback
+}
+
+/* ───────── 3. UI glue ─────────────────────────────────────────────────── */
+const $input  = document.getElementById('maxInput');
+const $button = document.getElementById('btnMake');
+const $card   = document.getElementById('resultCard');
+const $out    = document.getElementById('ticksList');
+
+$button.addEventListener('click', () => {
+  const raw = $input.value.replace(/[^\d]/g, '');    // strip spaces & commas
+  const val = Number(raw);
+
+  if (!Number.isFinite(val) || val <= 0) {
+    $out.textContent = 'Please enter a positive integer.';
+    $card.classList.remove('d-none');
+    return;
+  }
+ 
+  const ticks = buildTicks(val)
+      .map(v => v.toLocaleString('en-US'));          // 1 000 000 formatting
+
+  $out.textContent = ticks.join(' , ');
+  $card.classList.remove('d-none');
+  
+});
+</script>
+
+<!-- optional: Bootstrap JS (only if you need tooltips, etc.) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
