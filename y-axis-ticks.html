@@ -13,16 +13,35 @@
 <body class="bg-light">
 
 <div class="container py-5">
-  <h1 class="mb-4">Dynamic Y-Axis Tick Generator (9, 8, 7, 6, 5, 4, 3 ticks) for graphs</h1>
+  <h1 class="mb-4">Dynamic Y-Axis Tick Generator (9, 8, 7, 6, 5, 4, 3 ticks) for graphs with negative values</h1>
 
   <!-- ▸ input -------------------------------------------------------------->
   <div class="mb-3">
-    <label for="maxInput" class="form-label fw-semibold">
-      Largest data value
-    </label>
-    <div class="input-group">
-      <input id="maxInput" type="text" class="form-control"
-             placeholder="e.g. 3 450 000" />
+    <div class="row">
+      <div class="col-md-4">
+        <label for="minInput" class="form-label fw-semibold">
+          Minimum data value
+        </label>
+        <input id="minInput" type="text" class="form-control"
+               placeholder="e.g. -500 000" value="0" />
+      </div>
+      <div class="col-md-4">
+        <label for="maxInput" class="form-label fw-semibold">
+          Maximum data value
+        </label>
+        <input id="maxInput" type="text" class="form-control"
+               placeholder="e.g. 3 450 000" />
+      </div>
+      <div class="col-md-4">
+        <label for="tickCountInput" class="form-label fw-semibold">
+          Desired tick count(s) range
+        </label>
+        <input id="tickCountInput" type="text" class="form-control"
+               placeholder="e.g. 7, 5, 3" value="9, 8, 7, 6, 5, 4, 3" />
+        <div class="form-text">Comma-separated list (2-100)</div>
+      </div>
+    </div>
+    <div class="mt-3">
       <button id="btnMake" class="btn btn-primary">Generate</button>
     </div>
   </div>
@@ -34,180 +53,359 @@
       <p id="ticksList" class="card-text mb-0"></p>
     </div>
   </div>
+
+  <!-- ▸ examples ------------------------------------------------------------->
+  <div class="mt-5">
+    <h3 class="mb-4">Examples & Test Cases</h3>
+    <div class="row">
+      <div class="col-12">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover">
+            <thead class="table-dark">
+              <tr>
+                <th>Min</th>
+                <th>Max</th>
+                <th>Tick Count Range</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody id="examplesTable">
+              <!-- Examples will be populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!--  ▸ JavaScript ---------------------------------------------------------->
 <script>
-/* ───────── 1. choose the “round-to” step ──────────────────────────────── */
+/* ───────── 1. choose the "round-to" step ──────────────────────────────── */
 function chooseStep(n) {
+  if (n === 0) return 0;
   
-  if (n > 5_000_000_000) return 1_000_000_000;
-  if (n > 2_000_000_000) return 500_000_000;
-  if (n > 1_000_000_000) return 200_000_000;
-  if (n > 500_000_000) return 100_000_000;
-  if (n > 200_000_000) return 50_000_000;
-  if (n > 100_000_000) return 20_000_000;
-  if (n > 50_000_000) return 10_000_000;
-  if (n > 20_000_000) return 5_000_000;
-  if (n > 10_000_000) return 2_000_000;
-  if (n > 5_000_000) return 1_000_000;
-  if (n > 1_000_000) return 500_000;
-  if (n > 500_000) return 100_000;
-  if (n > 200_000) return 50_000;
-  if (n > 100_000) return 20_000;
-  if (n > 50_000) return 10_000;
-  if (n > 20_000) return 5_000;
-  if (n > 10_000) return 2_000;
-  if (n > 5_000) return 1_000;
-  if (n > 2_000) return 500;
-  if (n > 1_000) return 200;
-  if (n > 500) return 100;
-  if (n > 200) return 50;
-  if (n > 100) return 20;
-  if (n > 50) return 10;
-  if (n > 20) return 5;
-  if (n > 10) return 2;
-  if (n > 5) return 1;
-  if (n > 2) return 0.5;
-  if (n > 1) return 0.2;
-  if (n > 0.5) return 0.1;
-  if (n > 0.2) return 0.05;
-  if (n > 0.1) return 0.02;
-  if (n > 0.05) return 0.01;
-  if (n > 0.02) return 0.005;
-  if (n > 0.01) return 0.002;
-  if (n > 0.005) return 0.001;
-  if (n > 0.002) return 0.0005;
-  if (n > 0.001) return 0.0002;
-  if (n > 0.0005) return 0.0001;
-  if (n > 0.0002) return 0.00005;
-  if (n > 0.0001) return 0.00002;
-  if (n > 0.00005) return 0.00001;
-  if (n > 0) return 0.00001;
-
-  // …then the negatives, same thresholds but “<” and negated returns…
-  if (n < -5_000_000_000) return -1_000_000_000;
-  if (n < -2_000_000_000) return -500_000_000;
-  if (n < -1_000_000_000) return -200_000_000;
-  if (n < -500_000_000) return -100_000_000;
-  if (n < -200_000_000) return -50_000_000;
-  if (n < -100_000_000) return -20_000_000;
-  if (n < -50_000_000) return -10_000_000;
-  if (n < -20_000_000) return -5_000_000;
-  if (n < -10_000_000) return -2_000_000;
-  if (n < -5_000_000) return -1_000_000;
-  if (n < -1_000_000) return -500_000;
-  if (n < -500_000) return -100_000;
-  if (n < -200_000) return -50_000;
-  if (n < -100_000) return -20_000;
-  if (n < -50_000) return -10_000;
-  if (n < -20_000) return -5_000;
-  if (n < -10_000) return -2_000;
-  if (n < -5_000) return -1_000;
-  if (n < -2_000) return -500;
-  if (n < -1_000) return -200;
-  if (n < -500) return -100;
-  if (n < -200) return -50;
-  if (n < -100) return -20;
-  if (n < -50) return -10;
-  if (n < -20) return -5;
-  if (n < -10) return -2;
-  if (n < -5) return -1;
-  if (n < -2) return -0.5;
-  if (n < -1) return -0.2;
-  if (n < -0.5) return -0.1;
-  if (n < -0.2) return -0.05;
-  if (n < -0.1) return -0.02;
-  if (n < -0.05) return -0.01;
-  if (n < -0.02) return -0.005;
-  if (n < -0.01) return -0.002;
-  if (n < -0.005) return -0.001;
-  if (n < -0.002) return -0.0005;
-  if (n < -0.001) return -0.0002;
-  if (n < -0.0005) return -0.0001;
-  if (n < -0.0002) return -0.00005;
-  if (n < -0.0001) return -0.00002;
-  if (n < -0.00005) return -0.00001;
-  if (n < 0) return -0.00001;
-
-  // finally, exact zero
-  return 0;
- 
-}
-
-  function chooseStep_dynamic(n) { //not currently used
-    if (n === 0) return 0;
-
-    const sign = Math.sign(n);
-    const abs = Math.abs(n);
-
-    // Build all “1,2,5 × 10^exp” steps from 10^9 down to 10^(−5)
-    const steps = [];
-    for (let exp = 9; exp >= -5; exp--) {
-      const f = Math.pow(10, exp);
-      [1, 2, 5].forEach(m => steps.push(m * f));
+  const sign = Math.sign(n);
+  const abs = Math.abs(n);
+  
+  // Define the 1-2-5 pattern multipliers
+  const multipliers = [1, 2, 5];
+  
+  // Find the appropriate power of 10
+  const power = Math.floor(Math.log10(abs));
+  const base = Math.pow(10, power);
+  
+  // Find the best multiplier from 1-2-5 pattern
+  let bestStep = base;
+  for (const mult of multipliers) {
+    const step = mult * base;
+    // Choose step if n is between 2×step and 10×step (optimal range)
+    if (abs >= 2 * step && abs < 10 * step) {
+      bestStep = step;
+      break;
     }
-    // Sort descending
-    steps.sort((a, b) => b - a);
-
-    // Find first bucket where abs(n) > 5×step
-    for (let i = 0; i < steps.length; i++) {
-      const step = steps[i];
-      if (abs > step * 5) {
-        return sign * step;
+  }
+  
+  // If no step was found in the optimal range, try the next smaller power
+  if (bestStep === base && abs < 2 * base) {
+    const smallerBase = Math.pow(10, power - 1);
+    for (const mult of multipliers) {
+      const step = mult * smallerBase;
+      if (abs >= 2 * step && abs < 10 * step) {
+        bestStep = step;
+        break;
       }
     }
-
-    // If it’s very small (≤ 5 × 0.00001), clamp to the smallest bucket
-    return sign * 0.00001;
   }
+  
+  // Handle edge cases for very small or very large numbers
+  if (abs < 0.01) {
+    bestStep = 0.01;
+  } else if (abs > 1e9) {
+    bestStep = 1e9;
+  }
+  
+  return sign * bestStep;
+}
+
+/**
+ * General solution for 1-2-5 pattern rounding
+ * @param {number} value - The value to find appropriate step for
+ * @param {Object} options - Configuration options
+ * @param {number[]} options.multipliers - Pattern multipliers (default: [1, 2, 5])
+ * @param {number} options.minRange - Minimum range multiplier (default: 2)
+ * @param {number} options.maxRange - Maximum range multiplier (default: 10)
+ * @param {number} options.minStep - Minimum step size (default: 0.01)
+ * @param {number} options.maxStep - Maximum step size (default: 1e9)
+ * @param {number} options.maxExponent - Maximum power of 10 (default: 9)
+ * @param {number} options.minExponent - Minimum power of 10 (default: -5)
+ * @returns {number} The appropriate step size
+ */
+function getOptimalStep(value, options = {}) {
+  const {
+    multipliers = [1, 2, 5],
+    minRange = 2,
+    maxRange = 10,
+    minStep = 0.01,
+    maxStep = 1e9,
+    maxExponent = 9,
+    minExponent = -5
+  } = options;
+
+  if (value === 0) return 0;
+  
+  const sign = Math.sign(value);
+  const abs = Math.abs(value);
+  
+  // Handle edge cases
+  if (abs < minStep) return sign * minStep;
+  if (abs > maxStep) return sign * maxStep;
+  
+  // Find the appropriate power of 10
+  const power = Math.floor(Math.log10(abs));
+  const clampedPower = Math.max(minExponent, Math.min(maxExponent, power));
+  const base = Math.pow(10, clampedPower);
+  
+  // Find the best multiplier from the pattern
+  let bestStep = base;
+  for (const mult of multipliers) {
+    const step = mult * base;
+    // Choose step if value is in the optimal range
+    if (abs >= minRange * step && abs < maxRange * step) {
+      bestStep = step;
+      break;
+    }
+  }
+  
+  return sign * bestStep;
+}
+
+function chooseStep_dynamic(n) {
+  if (n === 0) return 0;
+
+  const sign = Math.sign(n);
+  const abs = Math.abs(n);
+
+  // Build all "1,2,5 × 10^exp" steps from 10^9 down to 10^(−5)
+  const steps = [];
+  for (let exp = 9; exp >= -5; exp--) {
+    const f = Math.pow(10, exp);
+    [1, 2, 5].forEach(m => steps.push(m * f));
+  }
+  // Sort descending
+  steps.sort((a, b) => b - a);
+
+  // Find first bucket where abs(n) > 2×step (better threshold than 5×)
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    if (abs >= 2 * step && abs < 10 * step) {
+      return sign * step;
+    }
+  }
+
+  // If it's very small (≤ 2 × 0.00001), clamp to the smallest bucket
+  return sign * 0.00001;
+}
 
 
 /* ───────── 2. build ticks: prefer 7 → 5 → 3 ──────────────────────────── */
-function buildTicks(max) {
-  const step    = chooseStep(max);
-
-  const ceiling = Math.ceil(max / step) * step;      // round up to step
-
-  for (const want of [9, 8, 7, 6, 5, 4, 3]) {
-    for (let k = 1; k <= ceiling / step; k++) {
-      const gap   = k * step;
-      const count = Math.floor((ceiling - 1) / gap) + 2; // formula incl. 0 & ceiling
+function buildTicks(min, max, desiredTicks = [9, 8, 7, 6, 5, 4, 3]) {
+  // Handle single value case (backward compatibility)
+  if (max === undefined) {
+    max = min;
+    min = 0;
+  }
+  
+  // Ensure min <= max
+  if (min > max) {
+    [min, max] = [max, min];
+  }
+  
+  const range = max - min;
+  const step = chooseStep(range);
+  
+  // Calculate ceiling and floor based on step
+  const ceiling = Math.ceil(max / step) * step;
+  const floor = Math.floor(min / step) * step;
+  
+  // Try different tick counts in order of preference
+  for (const want of desiredTicks) {
+    for (let k = 1; k <= (ceiling - floor) / step; k++) {
+      const gap = k * step;
+      const count = Math.floor((ceiling - floor) / gap) + 1;
+      
       if (count === want) {
         const ticks = [];
-        for (let v = 0; v < ceiling; v += gap) ticks.push(v);
-        if (ticks[ticks.length - 1] !== ceiling) ticks.push(ceiling);
+        for (let v = floor; v <= ceiling; v += gap) {
+          ticks.push(v);
+        }
         return ticks;
       }
     }
   }
-
-  return [0, ceiling];                               // fallback
+  
+  // Fallback: return floor and ceiling
+  return [floor, ceiling];
 }
 
 /* ───────── 3. UI glue ─────────────────────────────────────────────────── */
 const $input  = document.getElementById('maxInput');
+const $minInput = document.getElementById('minInput');
+const $tickCountInput = document.getElementById('tickCountInput');
 const $button = document.getElementById('btnMake');
 const $card   = document.getElementById('resultCard');
 const $out    = document.getElementById('ticksList');
 
-$button.addEventListener('click', () => {
-  const raw = $input.value.replace(/[^\d]/g, '');    // strip spaces & commas
-  const val = Number(raw);
+// Function to parse and validate tick counts
+function parseTickCounts(input) {
+  if (!input.trim()) {
+    return [9, 8, 7, 6, 5, 4, 3]; // Default fallback
+  }
+  
+  const numbers = input.split(',').map(s => s.trim()).filter(s => s !== '');
+  const tickCounts = [];
+  
+  for (const numStr of numbers) {
+    const num = parseInt(numStr, 10);
+    if (isNaN(num) || num < 2 || num > 100) {
+      throw new Error(`Invalid tick count: ${numStr}. Must be between 2 and 100.`);
+    }
+    tickCounts.push(num);
+  }
+  
+  if (tickCounts.length === 0) {
+    return [9, 8, 7, 6, 5, 4, 3]; // Default fallback
+  }
+  
+  return tickCounts;
+}
 
-  if (!Number.isFinite(val) || val <= 0) {
-    $out.textContent = 'Please enter a positive integer.';
+// Function to perform the calculation
+function performCalculation() {
+  // Parse inputs, allowing negative numbers, decimals, and removing spaces/commas
+  const rawMin = $minInput.value.replace(/[,\s]/g, '');
+  const rawMax = $input.value.replace(/[,\s]/g, '');
+  const valMin = Number(rawMin);
+  const valMax = Number(rawMax);
+
+  if (!Number.isFinite(valMin) || !Number.isFinite(valMax)) {
+    $out.textContent = 'Please enter valid numbers for both min and max values.';
+    $card.classList.remove('d-none');
+    return;
+  }
+  
+  if (valMin >= valMax) {
+    $out.textContent = 'Please ensure the minimum value is less than the maximum value.';
+    $card.classList.remove('d-none');
+    return;
+  }
+  
+  // Parse tick counts
+  let desiredTicks;
+  try {
+    desiredTicks = parseTickCounts($tickCountInput.value);
+  } catch (error) {
+    $out.textContent = error.message;
     $card.classList.remove('d-none');
     return;
   }
  
-  const ticks = buildTicks(val)
+  const ticks = buildTicks(valMin, valMax, desiredTicks)
       .map(v => v.toLocaleString('en-US'));          // 1 000 000 formatting
 
   $out.textContent = ticks.join(' , ');
   $card.classList.remove('d-none');
-  
+}
+
+// Event listeners
+$button.addEventListener('click', performCalculation);
+
+// Handle Enter key press on all input fields
+$minInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    performCalculation();
+  }
 });
+
+$input.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    performCalculation();
+  }
+});
+
+$tickCountInput.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    performCalculation();
+  }
+});
+
+// Handle input changes for real-time calculation
+$minInput.addEventListener('input', performCalculation);
+$input.addEventListener('input', performCalculation);
+$tickCountInput.addEventListener('input', performCalculation);
+
+// Generate examples table
+function generateExamples() {
+  const examples = [
+    // Small positive ranges
+    { min: 0, max: 100, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Small range" },
+    { min: 0, max: 50, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Very small range" },
+    { min: 0, max: 200, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Medium small range" },
+    
+    // Medium ranges
+    { min: 0, max: 1000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Medium range" },
+    { min: 0, max: 5000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Medium-large range" },
+    { min: 0, max: 2500, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Medium range" },
+    
+    // Large ranges
+    { min: 0, max: 100000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Large range" },
+    { min: 0, max: 500000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Very large range" },
+    { min: 0, max: 1000000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Million range" },
+    
+    // Negative ranges
+    { min: -100, max: 100, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Negative to positive" },
+    { min: -500, max: 0, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "All negative" },
+    { min: -1000, max: 500, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Negative dominant" },
+    
+    // Decimal ranges
+    { min: 0, max: 1.5, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Decimal range" },
+    { min: 0, max: 0.5, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Small decimal" },
+    { min: -2.5, max: 2.5, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Decimal negative" },
+    
+    // Very large numbers
+    { min: 0, max: 5000000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Millions" },
+    { min: 0, max: 10000000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "10 millions" },
+    { min: 0, max: 50000000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "50 millions" },
+    
+    // Custom tick preferences
+    { min: 0, max: 1000, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Many ticks" },
+    { min: 0, max: 500, ticks: "9, 8, 7, 6, 4, 5, 3", desc: "Few ticks" }
+  ];
+
+  const tbody = document.getElementById('examplesTable');
+  tbody.innerHTML = '';
+
+  examples.forEach((example, index) => {
+    try {
+      const ticks = buildTicks(example.min, example.max, parseTickCounts(example.ticks));
+      const formattedTicks = ticks.map(v => v.toLocaleString('en-US')).join(' , ');
+      
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${example.min.toLocaleString('en-US')}</td>
+        <td>${example.max.toLocaleString('en-US')}</td>
+        <td>${example.ticks}</td>
+        <td><code>${formattedTicks}</code></td>
+      `;
+      tbody.appendChild(row);
+    } catch (error) {
+      console.error(`Error in example ${index + 1}:`, error);
+    }
+  });
+}
+
+// Generate examples when page loads
+document.addEventListener('DOMContentLoaded', generateExamples);
 </script>
 
 <!-- optional: Bootstrap JS (only if you need tooltips, etc.) -->
