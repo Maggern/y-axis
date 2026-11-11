@@ -1,0 +1,11 @@
+{
+  "name": "y-axis-ticks",
+  "version": "1.0.0",
+  "description": "Nice axis tick marks on a 1-2-5 (or custom) pattern, linear and log.",
+  "main": "y-axis-ticks.js",
+  "types": "y-axis-ticks.d.ts",
+  "bin": { "y-axis-ticks": "cli.js" },
+  "files": ["y-axis-ticks.js", "y-axis-ticks.d.ts", "cli.js"],
+  "scripts": { "test": "node --test" },
+  "license": "GPL-3.0"
+}

@@ -8,8 +8,32 @@ A JavaScript library for generating optimal axis tick marks using the 1-2-5 patt
 - ✅ **Negative Numbers**: Supports ranges with negative values
 - ✅ **Custom Tick Counts**: Specify preferred number of ticks
 - ✅ **Wide Range**: Handles values from 0.00001 to 5,000,000,000
+- ✅ **Custom Patterns**: Any step multipliers, e.g. 1-2.5-5 or 1-3-6
+- ✅ **Logarithmic Scales**: `buildLogTicks` for log axes
+- ✅ **Clean Decimals**: No `0.30000000000000004` in the output
 - ✅ **Real-time Calculation**: Live updates as you type
-- ✅ **Responsive UI**: Bootstrap-based interface
+- ✅ **Responsive UI**: Bootstrap-based interface with locale-aware number formatting
+- ✅ **Node, browser and CLI**: One file, typed (`y-axis-ticks.d.ts`), tested
+
+## Files
+
+| File | What |
+|------|------|
+| `y-axis-ticks.js` | The library (browser global or `require`) |
+| `y-axis-ticks.d.ts` | TypeScript definitions |
+| `y-axis-ticks.html` | Interactive demo (serve the folder, e.g. `npx http-server`) |
+| `cli.js` | Command-line tool |
+| `y-axis-ticks.test.js` | Tests — run `npm test` (Node 20+) |
+
+## Install / Load
+
+```html
+<script src="y-axis-ticks.js"></script>  <!-- exposes buildTicks, buildLogTicks, ... -->
+```
+
+```javascript
+const { buildTicks, buildLogTicks } = require('./y-axis-ticks.js');
+```
 
 ## Quick Start
 
@@ -22,7 +46,7 @@ console.log(ticks); // [0, 200, 400, 600, 800, 1000]
 
 // Generate ticks for a range from -500 to 500
 const ticks = buildTicks(-500, 500);
-console.log(ticks); // [-500, -250, 0, 250, 500]
+console.log(ticks); // [-600, -400, -200, 0, 200, 400, 600]
 ```
 
 ### Advanced Usage
@@ -30,7 +54,14 @@ console.log(ticks); // [-500, -250, 0, 250, 500]
 ```javascript
 // Custom tick count preferences
 const ticks = buildTicks(0, 1000, [7, 5, 3]);
-console.log(ticks); // [0, 167, 333, 500, 667, 833, 1000]
+console.log(ticks); // [0, 500, 1000]  (no 1-2-5 step gives 7 or 5 ticks here)
+
+// Custom step pattern
+buildTicks(0, 1000, [5], { multipliers: [1, 2.5, 5] }); // [0, 250, 500, 750, 1000]
+
+// Logarithmic axis
+buildLogTicks(1, 1e6);    // [1, 10, 100, 1000, 10000, 100000, 1000000]
+buildLogTicks(0.02, 0.9); // [0.02, 0.05, 0.1, 0.2, 0.5, 1]
 
 // Single value (treats as max, min=0)
 const ticks = buildTicks(100);
@@ -39,14 +70,15 @@ console.log(ticks); // [0, 20, 40, 60, 80, 100]
 
 ## Core Functions
 
-### `buildTicks(min, max, desiredTicks)`
+### `buildTicks(min, max, desiredTicks, options)`
 
-Generates optimal tick marks for a given range.
+Generates tick marks that always cover `[min, max]` with a step from the pattern. Tries each count in `desiredTicks` in order and returns the first one a pattern step hits exactly; if none does, returns the finest step that stays within the largest count. `min > max` is swapped; `min === max` is padded. Throws `TypeError` on non-finite input or counts below 2.
 
 **Parameters:**
 - `min` (number): Minimum value of the range
 - `max` (number): Maximum value of the range  
 - `desiredTicks` (array, optional): Preferred tick counts in order of preference. Default: `[9, 8, 7, 6, 5, 4, 3]`
+- `options.multipliers` (array, optional): Step pattern per power of 10. Default: `[1, 2, 5]`
 
 **Returns:** Array of tick values
 
@@ -54,11 +86,28 @@ Generates optimal tick marks for a given range.
 ```javascript
 // Basic usage
 buildTicks(0, 100);     // [0, 20, 40, 60, 80, 100]
-buildTicks(-50, 50);    // [-50, -25, 0, 25, 50]
+buildTicks(-50, 50);    // [-60, -40, -20, 0, 20, 40, 60]
+buildTicks(0, 0.3);     // [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3]
 
 // Custom tick preferences
-buildTicks(0, 1000, [5, 3]);  // [0, 250, 500, 750, 1000]
-buildTicks(0, 500, [10]);     // [0, 56, 111, 167, 222, 278, 333, 389, 444, 500]
+buildTicks(0, 1000, [5, 3]);  // [0, 500, 1000]
+buildTicks(0, 500, [10]);     // [0, 100, 200, 300, 400, 500]  (closest under 10)
+```
+
+### `buildLogTicks(min, max, options)`
+
+Powers of 10 covering `[min, max]` (both must be > 0, else `RangeError`). Spans under 3 decades also get the pattern's in-between values (2, 5).
+
+## CLI
+
+```bash
+node cli.js 0 1000            # 0 200 400 600 800 1000
+node cli.js 0 1000 "7,5,3"    # 0 500 1000
+node cli.js 1 1e6 --log       # 1 10 100 1000 10000 100000 1000000
+node cli.js 0 1000 5 --pattern=1,2.5,5
+printf '0 100
+-50 50
+' | node cli.js   # one range per line
 ```
 
 ### `chooseStep(n)`
@@ -75,6 +124,7 @@ Determines the optimal step size for a given range using the 1-2-5 pattern.
 chooseStep(100);   // 20
 chooseStep(1000);  // 200
 chooseStep(50);    // 10
+chooseStep(15);    // 2
 ```
 
 ### `getOptimalStep(value, options)`
@@ -202,14 +252,15 @@ The algorithm follows the standard 1-2-5 pattern for optimal tick intervals:
 - **Step sizes**: 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, etc.
 - **Optimal range**: Each step is chosen when the range is between 2× and 10× the step size
 - **Fallback logic**: If no optimal step is found, tries the next smaller power of 10
+- **Precision**: Tick values are computed as integer × step and rounded to 12 significant digits
 
 ### Tick Count Selection
 
 The algorithm tries to match the desired tick count by:
-1. Calculating the optimal step size for the range
-2. Testing different gap multiples of the step
-3. Selecting the first gap that produces the desired number of ticks
-4. Falling back to fewer ticks if the desired count cannot be achieved
+1. Listing every pattern step around the range's magnitude (multiplier × 10^k)
+2. Snapping floor/ceiling of the data to each step and counting the ticks
+3. Returning the first desired count that some step hits exactly
+4. Falling back to the finest step whose tick count stays within the largest desired count
 
 ## Browser Compatibility
 
@@ -218,34 +269,15 @@ The algorithm tries to match the desired tick count by:
 - ✅ Safari 12+
 - ✅ Edge 79+
 
-## Future Improvements
+## Roadmap
 
-### High Priority
-- [ ] **Performance optimization**: Cache step calculations for repeated ranges
-- [ ] **Decimal precision**: Better handling of floating-point arithmetic
-- [ ] **Custom patterns**: Support for non-1-2-5 patterns (e.g., 1-3-6, 1-2-4-8)
-- [ ] **Logarithmic scales**: Support for logarithmic tick generation
-- [ ] **Date/time scales**: Specialized handling for temporal data
+Done: decimal precision, custom patterns, logarithmic scales, TypeScript definitions, unit tests, accessibility (labels, live result region), number-format locales, CLI, single-module extraction, input validation.
 
-### Medium Priority
-- [ ] **TypeScript support**: Add TypeScript definitions
-- [ ] **Unit tests**: Comprehensive test suite
-- [ ] **Performance benchmarks**: Measure and optimize for large datasets
-- [ ] **Accessibility**: ARIA labels and keyboard navigation
-- [ ] **Internationalization**: Support for different number formats
-
-### Low Priority
-- [ ] **Web Components**: Create reusable web components
-- [ ] **React/Vue hooks**: Framework-specific hooks
-- [ ] **CLI tool**: Command-line interface for batch processing
-- [ ] **Documentation site**: Interactive documentation with examples
-- [ ] **Plugin ecosystem**: Support for third-party plugins
-
-### Technical Debt
-- [ ] **Code refactoring**: Extract utility functions into separate modules
-- [ ] **Error handling**: More robust error handling and validation
-- [ ] **Memory optimization**: Reduce memory footprint for large datasets
-- [ ] **Bundle size**: Optimize for tree-shaking and code splitting
+Not planned until someone needs it:
+- **Date/time scales** — calendar steps (days, months, quarters) are a different algorithm, not a pattern tweak
+- **Caching** — a call takes microseconds; nothing to cache
+- **Web Components / React / Vue hooks** — `buildTicks` is a pure function; call it in `useMemo`
+- **Docs site, plugins, bundling** — the library is one ~150-line file
 
 ## Contributing
 
@@ -257,7 +289,7 @@ The algorithm tries to match the desired tick count by:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GNU GPL v3 - see the LICENSE file for details.
 
 ## Acknowledgments
 
